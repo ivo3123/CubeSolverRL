@@ -7,19 +7,19 @@ class PieceType(Enum):
 
 class Color(Enum):
     White = 0
-    Blue = 1
-    Red = 2
-    Yellow = 3
-    Green = 4
-    Orange = 5
+    Orange = 1
+    Green = 2
+    Red = 3
+    Blue = 4
+    Yellow = 5
 
 class Face(Enum):
     U = 0
-    B = 1
-    R = 2
-    D = 3
-    F = 4
-    L = 5
+    L = 1
+    F = 2
+    R = 3
+    B = 4
+    D = 5
 
 class Letter(Enum):
     A = 0
