@@ -119,3 +119,5 @@ class RubiksCubeEnv(gym.Env):
 
         return None
     
+    def close(self):
+        pass
