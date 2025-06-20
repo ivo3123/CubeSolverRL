@@ -30,6 +30,8 @@ class RubiksCubeEnv(gym.Env):
         self.cube = get_solved_cube()
         self.render_mode = render_mode
 
+        self.should_only_use_u_l_moves = should_only_use_u_l_moves
+
     def _get_obs(self) -> np.ndarray:
         """Convert the cube state to a numpy array observation."""
 
@@ -88,11 +90,39 @@ class RubiksCubeEnv(gym.Env):
     def step(self, action: int):
         """Execute a move and return (obs, reward, terminated, truncated, info)."""
 
-        # Map action to (Face, Rotation)
-        face = Face(action // 3)  # 0-5 for faces
-        rotation = Rotation(action % 3)  # 0-2 for rotations
+        d_action_turn = {
+            0: (Face.U, Rotation.Clockwise),
+            1: (Face.U, Rotation.CounterClockwise),
+            2: (Face.U, Rotation.Double),
+            3: (Face.L, Rotation.Clockwise),
+            4: (Face.L, Rotation.CounterClockwise),
+            5: (Face.L, Rotation.Double),
+            6: (Face.F, Rotation.Clockwise),
+            7: (Face.F, Rotation.CounterClockwise),
+            8: (Face.F, Rotation.Double),
+            9: (Face.R, Rotation.Clockwise),
+            10: (Face.R, Rotation.CounterClockwise),
+            11: (Face.R, Rotation.Double),
+            12: (Face.B, Rotation.Clockwise),
+            13: (Face.B, Rotation.CounterClockwise),
+            14: (Face.B, Rotation.Double),
+            15: (Face.D, Rotation.Clockwise),
+            16: (Face.D, Rotation.CounterClockwise),
+            17: (Face.D, Rotation.Double),
+        }
+
+        """
+        note this action to turn mapping is the same as
+
+        face = Face(action // 3)
+        rotation = Rotation(action % 3)
+
+        the more explicit variant is used for more clarity in the code
+        """
+
+        turn = d_action_turn[action]
         
-        self.cube = move(self.cube, [(face, rotation)])
+        self.cube = move(self.cube, turn)
         
         terminated = self._is_solved()
         reward = 1.0 if terminated else -0.01
@@ -102,7 +132,7 @@ class RubiksCubeEnv(gym.Env):
             reward,
             terminated,
             False,  # Truncated (not used here)
-            {"action": f"{face.name} {rotation.name}"},
+            {"action": str(turn)},
         )
 
     def _is_solved(self) -> bool:
@@ -114,7 +144,7 @@ class RubiksCubeEnv(gym.Env):
     def render(self):
         """Render the cube state."""
 
-        if self.render_mode == "console":
+        if self.render_mode == "human":
             print_cube(self.cube)
 
         return None
