@@ -5,11 +5,12 @@ from cube.cube import move, get_solved_cube
 from cube.enums import Face, Rotation
 from cube.renderer import print_cube
 from cube.enums import Letter, PieceType
+from cube_env.enums import Phases
 
 class RubiksCubeEnv(gym.Env):
     """Custom Gymnasium environment for a Rubik's Cube."""
 
-    def __init__(self, render_mode, should_only_use_u_l_moves=False):
+    def __init__(self, initial_scramble=None, render_mode="human", should_only_use_u_l_moves=False):
         super().__init__()
 
         rotations_count = 3
@@ -27,10 +28,88 @@ class RubiksCubeEnv(gym.Env):
             dtype=np.int8
         )
         
-        self.cube = get_solved_cube()
+        self.initial_scramble = initial_scramble
         self.render_mode = render_mode
-
         self.should_only_use_u_l_moves = should_only_use_u_l_moves
+
+        self._apply_scramble()
+
+        # check if is partially solved
+        self.current_phase = Phases.Initial
+
+    def reset(self, seed=None, options=None):
+        """Reset the cube to a solved state."""
+
+        super().reset(seed=seed)
+        self._apply_scramble()
+        return self._get_obs(), {"info": "Cube reset to solved state."}
+
+    def step(self, action: int):
+        """Execute a move and return (obs, reward, terminated, truncated, info)."""
+
+        d_action_turn = {
+            0: (Face.U, Rotation.Clockwise),
+            1: (Face.U, Rotation.CounterClockwise),
+            2: (Face.U, Rotation.Double),
+            3: (Face.L, Rotation.Clockwise),
+            4: (Face.L, Rotation.CounterClockwise),
+            5: (Face.L, Rotation.Double),
+            6: (Face.F, Rotation.Clockwise),
+            7: (Face.F, Rotation.CounterClockwise),
+            8: (Face.F, Rotation.Double),
+            9: (Face.R, Rotation.Clockwise),
+            10: (Face.R, Rotation.CounterClockwise),
+            11: (Face.R, Rotation.Double),
+            12: (Face.B, Rotation.Clockwise),
+            13: (Face.B, Rotation.CounterClockwise),
+            14: (Face.B, Rotation.Double),
+            15: (Face.D, Rotation.Clockwise),
+            16: (Face.D, Rotation.CounterClockwise),
+            17: (Face.D, Rotation.Double),
+        }
+
+        """
+        note this action to turn mapping is the same as
+
+        face = Face(action // 3)
+        rotation = Rotation(action % 3)
+
+        the more explicit variant is used for more clarity in the code
+        """
+
+        turn = d_action_turn[action]
+        
+        self.cube = move(self.cube, turn)
+        
+        terminated = self._is_solved()
+        reward = 100_000.0 if terminated else -0.01
+
+        truncated = False
+        
+        return (
+            self._get_obs(),
+            reward,
+            terminated,
+            truncated,
+            {"action": str(turn)},
+        )
+
+    def render(self):
+        """Render the cube state."""
+
+        if self.render_mode == "human":
+            print_cube(self.cube)
+
+        return None
+    
+    def close(self):
+        pass
+
+    def _is_solved(self) -> bool:
+        """Check if the cube is solved."""
+
+        solved_cube = get_solved_cube()
+        return self.cube == solved_cube
 
     def _get_obs(self) -> np.ndarray:
         """Convert the cube state to a numpy array observation."""
@@ -80,74 +159,27 @@ class RubiksCubeEnv(gym.Env):
 
         return np_cube.flatten()
 
-    def reset(self, seed=None, options=None):
-        """Reset the cube to a solved state."""
-
-        super().reset(seed=seed)
-        self.cube = get_solved_cube()
-        return self._get_obs(), {"info": "Cube reset to solved state."}
-
-    def step(self, action: int):
-        """Execute a move and return (obs, reward, terminated, truncated, info)."""
-
-        d_action_turn = {
-            0: (Face.U, Rotation.Clockwise),
-            1: (Face.U, Rotation.CounterClockwise),
-            2: (Face.U, Rotation.Double),
-            3: (Face.L, Rotation.Clockwise),
-            4: (Face.L, Rotation.CounterClockwise),
-            5: (Face.L, Rotation.Double),
-            6: (Face.F, Rotation.Clockwise),
-            7: (Face.F, Rotation.CounterClockwise),
-            8: (Face.F, Rotation.Double),
-            9: (Face.R, Rotation.Clockwise),
-            10: (Face.R, Rotation.CounterClockwise),
-            11: (Face.R, Rotation.Double),
-            12: (Face.B, Rotation.Clockwise),
-            13: (Face.B, Rotation.CounterClockwise),
-            14: (Face.B, Rotation.Double),
-            15: (Face.D, Rotation.Clockwise),
-            16: (Face.D, Rotation.CounterClockwise),
-            17: (Face.D, Rotation.Double),
-        }
-
-        """
-        note this action to turn mapping is the same as
-
-        face = Face(action // 3)
-        rotation = Rotation(action % 3)
-
-        the more explicit variant is used for more clarity in the code
-        """
-
-        turn = d_action_turn[action]
+    def _apply_scramble(self) -> None:
+        if self.initial_scramble is None:
+            self.initial_scramble = [
+                (Face.R, Rotation.Clockwise),
+                (Face.B, Rotation.CounterClockwise),
+                (Face.L, Rotation.Clockwise),
+                (Face.F, Rotation.Clockwise),
+                (Face.L, Rotation.Double),
+                (Face.U, Rotation.CounterClockwise),
+                (Face.D, Rotation.Clockwise),
+                (Face.B, Rotation.CounterClockwise),
+                (Face.L, Rotation.Clockwise),
+                (Face.B, Rotation.CounterClockwise),
+                (Face.L, Rotation.Clockwise),
+                (Face.F, Rotation.Clockwise),
+                (Face.L, Rotation.Double),
+                (Face.U, Rotation.CounterClockwise),
+                (Face.D, Rotation.Clockwise),
+                (Face.B, Rotation.CounterClockwise),
+                (Face.L, Rotation.Clockwise),
+                (Face.B, Rotation.CounterClockwise),
+            ]
         
-        self.cube = move(self.cube, turn)
-        
-        terminated = self._is_solved()
-        reward = 1.0 if terminated else -0.01
-        
-        return (
-            self._get_obs(),
-            reward,
-            terminated,
-            False,  # Truncated (not used here)
-            {"action": str(turn)},
-        )
-
-    def _is_solved(self) -> bool:
-        """Check if the cube is solved."""
-
-        solved_cube = get_solved_cube()
-        return self.cube == solved_cube
-
-    def render(self):
-        """Render the cube state."""
-
-        if self.render_mode == "human":
-            print_cube(self.cube)
-
-        return None
-    
-    def close(self):
-        pass
+        self.cube = move(get_solved_cube(), l_turns=self.initial_scramble)
