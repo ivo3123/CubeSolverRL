@@ -5,7 +5,7 @@ from cube.cube import move, get_solved_cube
 from cube.enums import Face, Rotation
 from cube.renderer import print_cube
 from cube.enums import Letter, PieceType, Color
-from cube_env.enums import Phases
+from cube_env.phases import count_solved_edges_first_layer, Phases
 
 class RubiksCubeEnv(gym.Env):
     """Custom Gymnasium environment for a Rubik's Cube."""
@@ -41,7 +41,7 @@ class RubiksCubeEnv(gym.Env):
         self._apply_scramble()
         self.counter_for_punishment = 1
 
-        self.edges_first_layer_solved_count = self._get_edges_first_layer_solved_count()
+        self.edges_first_layer_solved_count = count_solved_edges_first_layer(self.cube)
 
         if self.edges_first_layer_solved_count < 4:
             self.current_phase = Phases.EdgesFirstLayer
@@ -90,14 +90,14 @@ class RubiksCubeEnv(gym.Env):
         is_terminated = False
 
         if self.current_phase == Phases.EdgesFirstLayer:
-            edges_first_layer_solved_count_after_turn = self._get_edges_first_layer_solved_count()
+            edges_first_layer_solved_count_after_turn = count_solved_edges_first_layer(self.cube)
             if edges_first_layer_solved_count_after_turn == 4:
                 reward = 500
                 self.current_phase = Phases.CornersFirstLayer
             elif edges_first_layer_solved_count_after_turn < self.edges_first_layer_solved_count:
-                reward = -19
+                reward = -19 * (self.edges_first_layer_solved_count - edges_first_layer_solved_count_after_turn)
             elif edges_first_layer_solved_count_after_turn > self.edges_first_layer_solved_count:
-                reward = 20
+                reward = 20 * (edges_first_layer_solved_count_after_turn - self.edges_first_layer_solved_count)
             elif edges_first_layer_solved_count_after_turn == self.edges_first_layer_solved_count:
                 reward = -1
             
@@ -132,25 +132,6 @@ class RubiksCubeEnv(gym.Env):
 
         solved_cube = get_solved_cube()
         return self.cube == solved_cube
-
-    def _get_edges_first_layer_solved_count(self) -> int:
-        is_edge_1_solved =\
-            self.cube.get((Letter.U, PieceType.Edge)) == Color.Yellow\
-            and self.cube.get((Letter.K, PieceType.Edge)) == Color.Green
-        
-        is_edge_2_solved =\
-            self.cube.get((Letter.V, PieceType.Edge)) == Color.Yellow\
-            and self.cube.get((Letter.O, PieceType.Edge)) == Color.Red
-        
-        is_edge_3_solved =\
-            self.cube.get((Letter.W, PieceType.Edge)) == Color.Yellow\
-            and self.cube.get((Letter.S, PieceType.Edge)) == Color.Blue
-        
-        is_edge_4_solved =\
-            self.cube.get((Letter.X, PieceType.Edge)) == Color.Yellow\
-            and self.cube.get((Letter.G, PieceType.Edge)) == Color.Orange
-        
-        return int(is_edge_1_solved) + int(is_edge_2_solved) + int(is_edge_3_solved) + int(is_edge_4_solved)
     
     def _get_obs(self) -> np.ndarray:
         """Convert the cube state to a numpy array observation."""
