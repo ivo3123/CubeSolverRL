@@ -4,7 +4,7 @@ import numpy as np
 from cube.cube import move, get_solved_cube
 from cube.enums import Face, Rotation
 from cube.renderer import print_cube
-from cube.enums import Letter, PieceType
+from cube.enums import Letter, PieceType, Color
 from cube_env.enums import Phases
 
 class RubiksCubeEnv(gym.Env):
@@ -32,16 +32,22 @@ class RubiksCubeEnv(gym.Env):
         self.render_mode = render_mode
         self.should_only_use_u_l_moves = should_only_use_u_l_moves
 
-        self._apply_scramble()
-
-        # check if is partially solved
-        self.current_phase = Phases.Initial
+        self.reset()
 
     def reset(self, seed=None, options=None):
         """Reset the cube to a solved state."""
 
         super().reset(seed=seed)
         self._apply_scramble()
+        self.counter_for_punishment = 1
+
+        self.edges_first_layer_solved_count = self._get_edges_first_layer_solved_count()
+
+        if self.edges_first_layer_solved_count < 4:
+            self.current_phase = Phases.EdgesFirstLayer
+        else:
+            self.current_phase = Phases.CornersFirstLayer
+            
         return self._get_obs(), {"info": "Cube reset to solved state."}
 
     def step(self, action: int):
@@ -80,17 +86,33 @@ class RubiksCubeEnv(gym.Env):
         turn = d_action_turn[action]
         
         self.cube = move(self.cube, turn)
-        
-        terminated = self._is_solved()
-        reward = 100_000.0 if terminated else -0.01
 
-        truncated = False
+        is_terminated = False
+
+        if self.current_phase == Phases.EdgesFirstLayer:
+            edges_first_layer_solved_count_after_turn = self._get_edges_first_layer_solved_count()
+            if edges_first_layer_solved_count_after_turn == 4:
+                reward = 500
+                self.current_phase = Phases.CornersFirstLayer
+            elif edges_first_layer_solved_count_after_turn < self.edges_first_layer_solved_count:
+                reward = -19
+            elif edges_first_layer_solved_count_after_turn > self.edges_first_layer_solved_count:
+                reward = 20
+            elif edges_first_layer_solved_count_after_turn == self.edges_first_layer_solved_count:
+                reward = -1
+            
+            self.edges_first_layer_solved_count = edges_first_layer_solved_count_after_turn
+        
+        is_terminated = self.current_phase == Phases.CornersFirstLayer
+        #is_terminated = self._is_solved()
+
+        is_truncated = False
         
         return (
             self._get_obs(),
             reward,
-            terminated,
-            truncated,
+            is_terminated,
+            is_truncated,
             {"action": str(turn)},
         )
 
@@ -111,6 +133,25 @@ class RubiksCubeEnv(gym.Env):
         solved_cube = get_solved_cube()
         return self.cube == solved_cube
 
+    def _get_edges_first_layer_solved_count(self) -> int:
+        is_edge_1_solved =\
+            self.cube.get((Letter.U, PieceType.Edge)) == Color.Yellow\
+            and self.cube.get((Letter.K, PieceType.Edge)) == Color.Green
+        
+        is_edge_2_solved =\
+            self.cube.get((Letter.V, PieceType.Edge)) == Color.Yellow\
+            and self.cube.get((Letter.O, PieceType.Edge)) == Color.Red
+        
+        is_edge_3_solved =\
+            self.cube.get((Letter.W, PieceType.Edge)) == Color.Yellow\
+            and self.cube.get((Letter.S, PieceType.Edge)) == Color.Blue
+        
+        is_edge_4_solved =\
+            self.cube.get((Letter.X, PieceType.Edge)) == Color.Yellow\
+            and self.cube.get((Letter.G, PieceType.Edge)) == Color.Orange
+        
+        return int(is_edge_1_solved) + int(is_edge_2_solved) + int(is_edge_3_solved) + int(is_edge_4_solved)
+    
     def _get_obs(self) -> np.ndarray:
         """Convert the cube state to a numpy array observation."""
 
