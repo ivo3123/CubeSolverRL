@@ -43,6 +43,8 @@ class RubiksCubeEnv(gym.Env):
         self._apply_scramble()
         self.counter_for_punishment = 1
 
+        self.last_turn = None
+
         self.edges_first_layer_solved_count = count_solved_edges_first_layer(self.cube)
 
         if self.edges_first_layer_solved_count < 4:
@@ -88,6 +90,11 @@ class RubiksCubeEnv(gym.Env):
                 reward = -1
 
             self.edges_first_layer_solved_count = curr_count
+        
+        if self.last_turn is not None and turn[0] == self.last_turn[0]:
+            reward =- 20
+
+        self.last_turn = turn
 
         return self._get_obs(), reward, terminated, truncated, {"action": str(turn)}
 

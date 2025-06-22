@@ -5,12 +5,15 @@ class QNetwork(nn.Module):
     def __init__(self, state_size, action_size):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        size = 512
+
         self.net = nn.Sequential(
-            nn.Linear(state_size, 256),
+            nn.Linear(state_size, size),
             nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, action_size)
+            nn.Linear(size, size),
+            nn.LeakyReLU(),
+            nn.Linear(size, action_size)
         )
         self.to(self.device)
 
