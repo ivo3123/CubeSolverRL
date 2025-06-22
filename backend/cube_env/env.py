@@ -83,16 +83,16 @@ class RubiksCubeEnv(gym.Env):
                 self.current_phase = Phases.CornersFirstLayer
                 terminated = True
             elif delta > 0:
-                reward = 8 * delta
+                reward = 12 * delta
             elif delta < 0:
-                reward = -15 * abs(delta)
+                reward = -12 * abs(delta)
             else:
-                reward = -1
+                reward = 0
 
             self.edges_first_layer_solved_count = curr_count
         
         if self.last_turn is not None and turn[0] == self.last_turn[0]:
-            reward =- 20
+            reward -= 20
 
         self.last_turn = turn
 
