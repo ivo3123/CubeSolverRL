@@ -6,6 +6,8 @@ from cube.enums import Face, Rotation
 from cube.renderer import print_cube
 from cube.enums import Letter, PieceType, Color
 from cube_env.phases import count_solved_edges_first_layer, Phases
+from cube.utils import d_action_turn
+from cube.scramble import generate_scramble
 
 class RubiksCubeEnv(gym.Env):
     """Custom Gymnasium environment for a Rubik's Cube."""
@@ -53,68 +55,41 @@ class RubiksCubeEnv(gym.Env):
     def step(self, action: int):
         """Execute a move and return (obs, reward, terminated, truncated, info)."""
 
-        d_action_turn = {
-            0: (Face.U, Rotation.Clockwise),
-            1: (Face.U, Rotation.CounterClockwise),
-            2: (Face.U, Rotation.Double),
-            3: (Face.L, Rotation.Clockwise),
-            4: (Face.L, Rotation.CounterClockwise),
-            5: (Face.L, Rotation.Double),
-            6: (Face.F, Rotation.Clockwise),
-            7: (Face.F, Rotation.CounterClockwise),
-            8: (Face.F, Rotation.Double),
-            9: (Face.R, Rotation.Clockwise),
-            10: (Face.R, Rotation.CounterClockwise),
-            11: (Face.R, Rotation.Double),
-            12: (Face.B, Rotation.Clockwise),
-            13: (Face.B, Rotation.CounterClockwise),
-            14: (Face.B, Rotation.Double),
-            15: (Face.D, Rotation.Clockwise),
-            16: (Face.D, Rotation.CounterClockwise),
-            17: (Face.D, Rotation.Double),
-        }
-
         """
-        note this action to turn mapping is the same as
+            note this action to turn mapping is the same as
 
-        face = Face(action // 3)
-        rotation = Rotation(action % 3)
+            face = Face(action // 3)
+            rotation = Rotation(action % 3)
 
-        the more explicit variant is used for more clarity in the code
+            the more explicit variant is used for more clarity in the code
         """
-
-        turn = d_action_turn[action]
         
+        turn = d_action_turn[action]
         self.cube = move(self.cube, turn)
 
-        is_terminated = False
+        reward = 0.0
+        terminated = False
+        truncated = False
 
         if self.current_phase == Phases.EdgesFirstLayer:
-            edges_first_layer_solved_count_after_turn = count_solved_edges_first_layer(self.cube)
-            if edges_first_layer_solved_count_after_turn == 4:
-                reward = 500
-                self.current_phase = Phases.CornersFirstLayer
-            elif edges_first_layer_solved_count_after_turn < self.edges_first_layer_solved_count:
-                reward = -19 * (self.edges_first_layer_solved_count - edges_first_layer_solved_count_after_turn)
-            elif edges_first_layer_solved_count_after_turn > self.edges_first_layer_solved_count:
-                reward = 20 * (edges_first_layer_solved_count_after_turn - self.edges_first_layer_solved_count)
-            elif edges_first_layer_solved_count_after_turn == self.edges_first_layer_solved_count:
-                reward = -1
-            
-            self.edges_first_layer_solved_count = edges_first_layer_solved_count_after_turn
-        
-        is_terminated = self.current_phase == Phases.CornersFirstLayer
-        #is_terminated = self._is_solved()
+            prev_count = self.edges_first_layer_solved_count
+            curr_count = count_solved_edges_first_layer(self.cube)
+            delta = curr_count - prev_count
 
-        is_truncated = False
-        
-        return (
-            self._get_obs(),
-            reward,
-            is_terminated,
-            is_truncated,
-            {"action": str(turn)},
-        )
+            if curr_count == 4:
+                reward = 150
+                self.current_phase = Phases.CornersFirstLayer
+                terminated = True
+            elif delta > 0:
+                reward = 8 * delta
+            elif delta < 0:
+                reward = -15 * abs(delta)
+            else:
+                reward = -1
+
+            self.edges_first_layer_solved_count = curr_count
+
+        return self._get_obs(), reward, terminated, truncated, {"action": str(turn)}
 
     def render(self):
         """Render the cube state."""
@@ -183,25 +158,27 @@ class RubiksCubeEnv(gym.Env):
 
     def _apply_scramble(self) -> None:
         if self.initial_scramble is None:
-            self.initial_scramble = [
-                (Face.R, Rotation.Clockwise),
-                (Face.B, Rotation.CounterClockwise),
-                (Face.L, Rotation.Clockwise),
-                (Face.F, Rotation.Clockwise),
-                (Face.L, Rotation.Double),
-                (Face.U, Rotation.CounterClockwise),
-                (Face.D, Rotation.Clockwise),
-                (Face.B, Rotation.CounterClockwise),
-                (Face.L, Rotation.Clockwise),
-                (Face.B, Rotation.CounterClockwise),
-                (Face.L, Rotation.Clockwise),
-                (Face.F, Rotation.Clockwise),
-                (Face.L, Rotation.Double),
-                (Face.U, Rotation.CounterClockwise),
-                (Face.D, Rotation.Clockwise),
-                (Face.B, Rotation.CounterClockwise),
-                (Face.L, Rotation.Clockwise),
-                (Face.B, Rotation.CounterClockwise),
-            ]
+            # self.initial_scramble = [
+            #     (Face.R, Rotation.Clockwise),
+            #     (Face.B, Rotation.CounterClockwise),
+            #     (Face.L, Rotation.Clockwise),
+            #     (Face.F, Rotation.Clockwise),
+            #     (Face.L, Rotation.Double),
+            #     (Face.U, Rotation.CounterClockwise),
+            #     (Face.D, Rotation.Clockwise),
+            #     (Face.B, Rotation.CounterClockwise),
+            #     (Face.L, Rotation.Clockwise),
+            #     (Face.B, Rotation.CounterClockwise),
+            #     (Face.L, Rotation.Clockwise),
+            #     (Face.F, Rotation.Clockwise),
+            #     (Face.L, Rotation.Double),
+            #     (Face.U, Rotation.CounterClockwise),
+            #     (Face.D, Rotation.Clockwise),
+            #     (Face.B, Rotation.CounterClockwise),
+            #     (Face.L, Rotation.Clockwise),
+            #     (Face.B, Rotation.CounterClockwise),
+            # ]
+
+            scramble = generate_scramble()
         
-        self.cube = move(get_solved_cube(), l_turns=self.initial_scramble)
+        self.cube = move(get_solved_cube(), l_turns=scramble)
