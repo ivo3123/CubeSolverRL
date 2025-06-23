@@ -12,6 +12,7 @@ class Color(Enum):
     Red = 3
     Blue = 4
     Yellow = 5
+    Unknown = 6
 
 class Face(Enum):
     U = 0

@@ -118,9 +118,9 @@ class RubiksCubeEnv(gym.Env):
 
         def get_face(letter1, letter2, letter3, letter4, face):
             np_face_top_row = np.array([
-                self.cube.get((letter1, PieceType.Corner)).value,
+                6,#self.cube.get((letter1, PieceType.Corner)).value,
                 self.cube.get((letter1, PieceType.Edge)).value,
-                self.cube.get((letter2, PieceType.Corner)).value,
+                6,#self.cube.get((letter2, PieceType.Corner)).value,
             ])
 
             np_face_middle_row = np.array([
@@ -130,9 +130,9 @@ class RubiksCubeEnv(gym.Env):
             ])
 
             np_face_bottom_row = np.array([
-                self.cube.get((letter4, PieceType.Corner)).value,
+                6,#self.cube.get((letter4, PieceType.Corner)).value,
                 self.cube.get((letter3, PieceType.Edge)).value,
-                self.cube.get((letter3, PieceType.Corner)).value,
+                6,#self.cube.get((letter3, PieceType.Corner)).value,
             ])
 
             np_face = np.array([
