@@ -7,12 +7,12 @@ import polars as pl
 import plotly.express as px
 from cube.utils import d_action_turn
 
-num_episodes = 2_000
-max_steps = 72
+num_episodes = 10_000
+max_steps = 40
 gamma = 0.99
-epsilon_start = 1.0
-epsilon_end = 0.09
-epsilon_decay = 0.999
+epsilon_start = 1
+epsilon_end = 0.05
+epsilon_decay = 0.9995
 learning_rate = 0.0005
 batch_size = 64
 buffer_capacity = 10_000
@@ -39,8 +39,9 @@ l_epsilons = []
 l_edges_solved_count = []
 l_l_actions = []
 
-for episode in range(num_episodes):
+for episode in range(num_episodes+1):
     obs, _ = env.reset()
+    agent.reset()
     total_reward = 0
 
     l_actions = []
@@ -71,7 +72,8 @@ for episode in range(num_episodes):
     l_edges_solved_count.append(count_solved_edges_first_layer(env.cube))
     l_l_actions.append(l_actions)
 
-    print(f"Ep {episode} | Reward: {total_reward:.2f} | Epsilon: {epsilon:.3f} | Edges solve: {count_solved_edges_first_layer(env.cube)}")
+    if episode % 100 == 0:
+        print(f"Ep {episode} | Reward: {total_reward:.2f} | Epsilon: {epsilon:.3f} | Edges solve: {count_solved_edges_first_layer(env.cube)} | Actions: {l_actions}")
 
     if episode % 100 == 0:
         torch.save(agent.policy_net.state_dict(), f"saved_models/edges_first_layer/model_{episode}.pt")

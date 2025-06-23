@@ -22,14 +22,27 @@ class DQNAgent:
         self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=lr)
         self.replay_buffer = deque(maxlen=buffer_capacity)
 
+        self.last_action = None
+
     def select_action(self, state, epsilon):
         if random.random() < epsilon:
             return random.randint(0, self.n_actions - 1)
         else:
             state = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
             with torch.no_grad():
-                q_values = self.policy_net(state)
-            return q_values.argmax().item()
+                q_values = self.policy_net(state).squeeze(0)
+            
+            if self.last_action is not None:
+                face = self.last_action // 3
+
+                q_values[face * 3] = -np.inf
+                q_values[face * 3 + 1] = -np.inf
+                q_values[face * 3 + 2] = -np.inf
+
+            action = q_values.argmax().item()
+            self.last_action = action
+
+            return action
 
     def store_transition(self, transition):
         self.replay_buffer.append(transition)
@@ -59,3 +72,7 @@ class DQNAgent:
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.policy_net.state_dict())
+
+    def reset(self):
+        self.last_action = None
+
