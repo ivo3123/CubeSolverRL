@@ -76,3 +76,7 @@ target_update_interval = 10
 ![rolling_reward](rolling_reward_third_train.png)
 ![rolling_edges_solved_count](rolling_edges_third_train.png)
 ![rolling_moves_count](rolling_moves_count_of_solved_in_12_moves_third_train.png)
+
+# Inference
+
+![inference](inference_performance.png)
