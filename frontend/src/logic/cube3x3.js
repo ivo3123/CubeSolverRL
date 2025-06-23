@@ -1,69 +1,36 @@
-import colors from "../../colors";
+//New
+import colors from "../colors";
 
 const [white, orange, green, red, blue, yellow] = Object.values(colors);
 
-/**
- * This a a object representing a 3x3 cube.
- * It is a js Map where the keys are the the letters of the Speffz lettering scheme and the values are the corresponding colors.
- */
-const cube = new Map();
-
 const initialCubeState = {
-    U: {
-        pieceIds: ["A", "B", "C", "D"],
-        color: white,
-    },
-    L: {
-        pieceIds: ["E", "F", "G", "H"],
-        color: orange,
-    },
-    F: {
-        pieceIds: ["I", "J", "K", "L"],
-        color: green,
-    },
-    R: {
-        pieceIds: ["M", "N", "O", "P"],
-        color: red,
-    },
-    B: {
-        pieceIds: ["Q", "R", "S", "T"],
-        color: blue,
-    },
-    D: {
-        pieceIds: ["U", "V", "W", "X"],
-        color: yellow,
-    },
+    U: { pieceIds: ["A", "B", "C", "D"], color: white },
+    L: { pieceIds: ["E", "F", "G", "H"], color: orange },
+    F: { pieceIds: ["I", "J", "K", "L"], color: green },
+    R: { pieceIds: ["M", "N", "O", "P"], color: red },
+    B: { pieceIds: ["Q", "R", "S", "T"], color: blue },
+    D: { pieceIds: ["U", "V", "W", "X"], color: yellow },
 };
 
-const solve = (cube) => {
+export function createCube() {
+    const cube = new Map();
+
+    // Initialize
     for (const face in initialCubeState) {
         const { pieceIds, color } = initialCubeState[face];
-
         for (const letter of pieceIds) {
-            const edgeIndentifier = letter + "edge";
-            const cornerIndentifier = letter + "corner";
-
-            cube.set(edgeIndentifier, color);
-            cube.set(cornerIndentifier, color);
+            cube.set(`${letter}edge`, color);
+            cube.set(`${letter}corner`, color);
         }
-        const centreIdentifier = face + "centre";
-        cube.set(centreIdentifier, color);
+        cube.set(`${face}centre`, color);
     }
-};
 
-solve(cube);
-
-const move = (cube, turn) => {
     const makeSingleTurn = (val1, val2, val3, val4) => {
-        const oldVal1 = cube.get(val1);
-        const oldVal2 = cube.get(val2);
-        const oldVal3 = cube.get(val3);
-        const oldVal4 = cube.get(val4);
-
-        cube.set(val1, oldVal2);
-        cube.set(val2, oldVal3);
-        cube.set(val3, oldVal4);
-        cube.set(val4, oldVal1);
+        const tmp = cube.get(val1);
+        cube.set(val1, cube.get(val4));
+        cube.set(val4, cube.get(val3));
+        cube.set(val3, cube.get(val2));
+        cube.set(val2, tmp);
     };
 
     const makeDoubleTurn = (val1, val2, val3, val4) => {
@@ -71,7 +38,11 @@ const move = (cube, turn) => {
         makeSingleTurn(val1, val2, val3, val4);
     };
 
-    if (turn === "R") {
+    const move = (turn) => {
+        const m = makeSingleTurn;
+        const d = makeDoubleTurn;
+
+       if (turn === "R") {
         makeSingleTurn("Bcorner", "Jcorner", "Vcorner", "Tcorner");
         makeSingleTurn("Ccorner", "Kcorner", "Wcorner", "Qcorner");
         makeSingleTurn("Bedge", "Jedge", "Vedge", "Tedge");
@@ -198,6 +169,12 @@ const move = (cube, turn) => {
         makeDoubleTurn("Qcorner", "Tcorner", "Scorner", "Rcorner");
         makeDoubleTurn("Qedge", "Tedge", "Sedge", "Redge");
     }
-};
+    };
 
-export default { cube, move, solve };
+    return {
+        get state() {
+            return cube;
+        },
+        move,
+    };
+}
