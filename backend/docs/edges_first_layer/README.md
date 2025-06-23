@@ -52,8 +52,27 @@ buffer_capacity = 10_000
 target_update_interval = 10
 ```
 
-## Pictures
+## Results from first train
+
+* from 1 to 15_000 episode
+* `max_steps = 40`
 
 ![reward](reward.png)
 ![rolling_reward](rolling_reward.png)
 ![rolling_edges_solved_count](rolling_edges_solved_count.png)
+
+## Results from second train
+
+* from 15_001 to 30_000 episode
+* `max_steps = 16`
+
+![rolling_edges_solved_count](rolling_edges_second_train.png)
+
+## Results from third train
+
+* from 30_001 to 100_000 episode
+* `max_steps = 12`
+
+![rolling_reward](rolling_reward_third_train.png)
+![rolling_edges_solved_count](rolling_edges_third_train.png)
+![rolling_moves_count](rolling_moves_count_of_solved_in_12_moves_third_train.png)
