@@ -77,3 +77,23 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+#cube-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  background: #c9d4de;
+  padding: 1rem;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+#cube-buttons button {
+  font-weight: bold;
+  padding: 0.5em 1em;
+  background: white;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
