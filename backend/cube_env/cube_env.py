@@ -35,9 +35,6 @@ class RubiksCubeEnv(gym.Env):
         self.render_mode = render_mode
         self.solving_phase = solving_phase
 
-        # if solving_phase == Phases.CornersFirstLayer:
-        #     self.agent_edges_first_layer = self._make_agent("models/model_edges_first_layer.pt")
-
         self.reset()
 
     def reset(self, seed=None, options=None):
@@ -47,22 +44,7 @@ class RubiksCubeEnv(gym.Env):
         self._apply_scramble()
 
         self.edges_first_layer_solved_count = count_solved_edges_first_layer(self.cube)
-
-        # if self.solving_phase != Phases.EdgesFirstLayer:
-        #     assert self.edges_first_layer_solved_count == 4, "Expected correct envoirnmet"
-            # if self.edges_first_layer_solved_count < 4:
-            #     done = False
-            #     steps = 0
-            #     max_steps = 60
-            #     while not done and steps < max_steps:
-            #         obs = self._get_obs()
-            #         action = agent.select_action(obs, epsilon=0.00)
-            #         obs, reward, terminated, truncated, _ = env.step(action)
-            #         done = terminated or truncated
-            #         total_reward += reward
-            #         steps += 1
-            # else:
-            #     pass
+        self.corners_first_layer_solved_count = count_solved_corners_first_layer(self.cube)
 
         self.corners_first_layer_solved_count = count_solved_corners_first_layer(self.cube)
 
@@ -88,10 +70,13 @@ class RubiksCubeEnv(gym.Env):
         truncated = False
 
         if self.solving_phase == Phases.EdgesFirstLayer:
-            prev_count = self.edges_first_layer_solved_count
-            curr_count = count_solved_edges_first_layer(self.cube)
-            delta = curr_count - prev_count
-            if curr_count == 4:
+            edges_first_layer_solved_count_before_turn = self.edges_first_layer_solved_count
+            edges_first_layer_solved_count_after_turn = count_solved_edges_first_layer(self.cube)
+
+            self.edges_first_layer_solved_count = edges_first_layer_solved_count_after_turn
+
+            delta = edges_first_layer_solved_count_after_turn - edges_first_layer_solved_count_before_turn
+            if edges_first_layer_solved_count_after_turn == 4:
                 reward += 50
                 terminated = True
             elif delta != 0:
@@ -99,7 +84,28 @@ class RubiksCubeEnv(gym.Env):
             elif delta == 0:
                 reward += -0.2
 
-            self.edges_first_layer_solved_count = curr_count
+        if self.solving_phase == Phases.CornersFirstLayer:
+            edges_first_layer_solved_count_before_turn = self.edges_first_layer_solved_count
+            edges_first_layer_solved_count_after_turn = count_solved_edges_first_layer(self.cube)
+
+            corners_first_layer_solved_count_before_turn = self.corners_first_layer_solved_count
+            corners_first_layer_solved_count_after_turn = count_solved_corners_first_layer(self.cube)
+
+            if edges_first_layer_solved_count_after_turn == 4:
+                self.corners_first_layer_solved_count = corners_first_layer_solved_count_after_turn
+
+                delta = corners_first_layer_solved_count_after_turn - corners_first_layer_solved_count_before_turn
+                if corners_first_layer_solved_count_after_turn == 4:
+                    reward += 150
+                    terminated = True
+                elif delta != 0:
+                    reward += 20 * delta
+                elif delta == 0:
+                    reward += 0
+            elif edges_first_layer_solved_count_before_turn != 4:
+                reward += -1
+
+            self.edges_first_layer_solved_count = edges_first_layer_solved_count_after_turn
 
         return self._get_obs(), reward, terminated, truncated, {"action": str(turn)}
 
@@ -117,13 +123,32 @@ class RubiksCubeEnv(gym.Env):
     def _get_obs(self) -> np.ndarray:
         """Convert the cube state to a numpy array observation."""
 
+        if self.solving_phase == Phases.EdgesFirstLayer:
+            should_consider_edges_first_layer = True
+            should_consider_corners_first_layer = False
+            should_consider_edges_second_layer = False
+            should_consider_edges_third_layer = False
+            should_consider_corners_third_layer = False
+        elif self.solving_phase == Phases.CornersFirstLayer:
+            should_consider_edges_first_layer = True
+            should_consider_corners_first_layer = True
+            should_consider_edges_second_layer = False
+            should_consider_edges_third_layer = False
+            should_consider_corners_third_layer = False
+        elif self.solving_phase == Phases.EdgesSecondLayer:
+            should_consider_edges_first_layer = True
+            should_consider_corners_first_layer = True
+            should_consider_edges_second_layer = True
+            should_consider_edges_third_layer = False
+            should_consider_corners_third_layer = False
+
         np_matrix = transform_into_numpy_array(
             self.cube,
-                should_consider_edges_first_layer = True,
-                should_consider_corners_first_layer = False,
-                should_consider_edges_second_layer = True,
-                should_consider_edges_third_layer = True,
-                should_consider_corners_third_layer = False,
+            should_consider_edges_first_layer = should_consider_edges_first_layer,
+            should_consider_corners_first_layer = should_consider_corners_first_layer,
+            should_consider_edges_second_layer = should_consider_edges_second_layer,
+            should_consider_edges_third_layer = should_consider_edges_third_layer,
+            should_consider_corners_third_layer = should_consider_corners_third_layer,
         )
 
         return np_matrix.flatten()
@@ -133,21 +158,3 @@ class RubiksCubeEnv(gym.Env):
             scramble = generate_scramble()
         
         self.cube = move(get_solved_cube(), l_turns=scramble)
-
-    # def _make_agent(self, path_to_model: str):
-    #     n_actions = 18
-    #     obs_size = 54
-
-    #     agent = DQNAgent(
-    #         obs_dim=obs_size,
-    #         n_actions=n_actions,
-    #         lr=1e-3,
-    #         gamma=0.99,
-    #         batch_size=64,
-    #         buffer_capacity=10_000
-    #     )
-
-    #     agent.policy_net.load_state_dict(torch.load(model_path))
-    #     agent.policy_net.eval()
-
-    #     return agent
