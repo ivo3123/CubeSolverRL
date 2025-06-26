@@ -79,10 +79,6 @@ for episode in range(1, num_episodes+1):
     if episode % 5000 == 0:
         torch.save(agent.policy_net.state_dict(), f"saved_models/1_edges_first_layer/model_{episode}.pt")
 
-    print('Flat state:', request.state)
-    print('Cube dict:', env.cube)
-    print('Observation:', obs.tolist())
-
 env.close()
 
 torch.save(agent.policy_net.state_dict(), "saved_models/1_edges_first_layer/model.pt")
