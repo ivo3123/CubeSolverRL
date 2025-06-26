@@ -25,6 +25,8 @@
       <button @click="applyMove('B')">B</button>
       <button @click="applyMove(`B'`)">B'</button>
       <button @click="applyMove('B2')">B2</button>
+      <button @click="fetchAndApplyMoves">Solve Cube</button>
+      <button @click="applyScramble">Scramble Cube</button>
       
     </div>
   </div>
@@ -49,7 +51,6 @@ const FACE_INDEX = {
 }
 
 const speffzMap = {
-  // Up (Top) Face Corners
   Acorner: { pos: [-1, 1, -1], face: 'top' },
   Bcorner: { pos: [1, 1, -1], face: 'top' },
   Ccorner: { pos: [1, 1, 1], face: 'top' },
@@ -60,7 +61,6 @@ const speffzMap = {
   Cedge: { pos: [0, 1, 1], face: 'top' },    
   Dedge: { pos: [-1, 1, 0], face: 'top' },   
 
-  // Left Face
   Ecorner: { pos: [-1, 1, -1], face: 'left' },
   Eedge:   { pos: [-1, 0, -1], face: 'left' },
   Fcorner: { pos: [-1, 1, 0], face: 'left' },
@@ -70,7 +70,6 @@ const speffzMap = {
   Hcorner: { pos: [-1, -1, -1], face: 'left' },
   Hedge:   { pos: [-1, 0, -1], face: 'left' },
 
-  // Front Face
   Icorner: { pos: [-1, 1, 1], face: 'front' },
   Iedge:   { pos: [0, 1, 1], face: 'front' },
   Jcorner: { pos: [1, 1, 1], face: 'front' },
@@ -80,8 +79,6 @@ const speffzMap = {
   Lcorner: { pos: [-1, -1, 1], face: 'front' },
   Ledge:   { pos: [-1, 0, 1], face: 'front' },
 
-
-  // Right Face
   Mcorner: { pos: [1, 1, 1], face: 'right' },
   Medge:   { pos: [1, 1, 0], face: 'right' },
   Ncorner: { pos: [1, 1, -1], face: 'right' },  
@@ -91,8 +88,6 @@ const speffzMap = {
   Pcorner: { pos: [1, -1, 1], face: 'right' },
   Pedge:   { pos: [1, 0, 1], face: 'right' },
 
-
-  // Back Face
   Qcorner: { pos: [1, 1, -1], face: 'back' },
   Qedge:   { pos: [0, 1, -1], face: 'back' },
   Rcorner: { pos: [-1, 1, -1], face: 'back' },  
@@ -102,8 +97,6 @@ const speffzMap = {
   Tcorner: { pos: [1, -1, -1], face: 'back' },
   Tedge:   { pos: [1, 0, -1], face: 'back' },
 
-
-  // Down Face
   Ucorner: { pos: [-1, -1, 1], face: 'bottom' },
   Uedge:   { pos: [0, -1, 1], face: 'bottom' },
   Vcorner: { pos: [1, -1, 1], face: 'bottom' },
@@ -113,7 +106,6 @@ const speffzMap = {
   Xcorner: { pos: [-1, -1, -1], face: 'bottom' },
   Xedge: { pos: [-1, -1, 0], face: 'bottom' },
 
-  //For the central squares
   Ucentre: { pos: [0, 1, 0], face: 'top' },
   Dcentre: { pos: [0, -1, 0], face: 'bottom' },
   Fcentre: { pos: [0, 0, 1], face: 'front' },
@@ -186,4 +178,42 @@ onMounted(() => {
 
   animate()
 })
+
+function applyMoves(moves) {
+  if (!Array.isArray(moves)) {
+    console.error("Invalid moves:", moves);
+    return;
+  }
+
+  let delay = 500; // milliseconds between moves
+  let index = 0;
+
+  const performNextMove = () => {
+    if (index >= moves.length) return;
+
+    const move = moves[index];
+    applyMove(move);
+    index++;
+
+    setTimeout(performNextMove, delay);
+  };
+
+  performNextMove();
+}
+
+function fetchAndApplyMoves() {
+ fetch("http://127.0.0.1:8000/solve")
+  .then(res => res.json())
+  .then(data => {
+    const moves = data.moves;
+    console.log(data)
+    console.log(moves)
+    applyMoves(moves);
+  });
+}
+
+function applyScramble() {
+  const scramble = ["R2", "U2", "F'", "L", "D2", "B'", "R", "D", "L'", "F2", "U", "B2"];
+  applyMoves(scramble);
+}
 </script>
