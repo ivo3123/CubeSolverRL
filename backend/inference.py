@@ -8,7 +8,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from cube.utils import d_action_turn
 
-model_path = "models/model_edges_first_layer.pt"
+model_path = "models/1_edges_first_layer.pt"
 obs_size = 54
 n_actions = 18
 
