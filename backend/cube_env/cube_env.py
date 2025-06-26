@@ -6,17 +6,18 @@ from cube.enums import Face, Rotation
 from cube.renderer import print_cube
 from cube.enums import Letter, PieceType, Color
 from cube_env.phases import count_solved_edges_first_layer, count_solved_corners_first_layer, Phases
-from cube.utils import d_action_turn, transform_into_numpy_array
+from cube.utils import d_action_turn, transform_into_numpy_array, flat_state_to_cube_dict
 from cube.scramble import generate_scramble
 
 class RubiksCubeEnv(gym.Env):
     """Custom Gymnasium environment for a Rubik's Cube."""
-
+    
     def __init__(
         self,
         initial_scramble=None,
         render_mode="human",
         solving_phase: Phases = Phases.EdgesFirstLayer,
+        scramble_on_reset=True,
     ):
         super().__init__()
         
@@ -34,6 +35,7 @@ class RubiksCubeEnv(gym.Env):
         self.initial_scramble = initial_scramble
         self.render_mode = render_mode
         self.solving_phase = solving_phase
+        self.scramble_on_reset = scramble_on_reset
 
         self.reset()
 
@@ -41,7 +43,10 @@ class RubiksCubeEnv(gym.Env):
         """Reset the cube to a solved state."""
 
         super().reset(seed=seed)
-        self._apply_scramble()
+        if self.scramble_on_reset:
+            self._apply_scramble()
+        else:
+            self.cube = get_solved_cube()
 
         self.edges_first_layer_solved_count = count_solved_edges_first_layer(self.cube)
         self.corners_first_layer_solved_count = count_solved_corners_first_layer(self.cube)
@@ -158,3 +163,9 @@ class RubiksCubeEnv(gym.Env):
             scramble = generate_scramble()
         
         self.cube = move(get_solved_cube(), l_turns=scramble)
+
+    def set_state(self, flat_state: list[int]):
+        """Задава състоянието на куба от 54-елементен масив (flat state)."""
+        self.cube = flat_state_to_cube_dict(flat_state)
+        self.edges_first_layer_solved_count = count_solved_edges_first_layer(self.cube)
+        self.corners_first_layer_solved_count = count_solved_corners_first_layer(self.cube)

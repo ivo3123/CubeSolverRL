@@ -13,7 +13,7 @@ backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from agent.agent import DQNAgent
-from cube_env.env import RubiksCubeEnv
+from cube_env.cube_env import RubiksCubeEnv
 from cube.cube import get_solved_cube, move as apply_move
 from cube.enums import Face, Rotation
 from cube.utils import d_action_turn
@@ -66,16 +66,23 @@ def load_agent():
     saved_models_dir = backend_dir / "saved_models" / "edges_first_layer"
     
     model_path = None
-    if models_dir.exists():
-        if (models_dir / "model_edges_first_layer.pt").exists():
-            model_path = models_dir / "model_edges_first_layer.pt"
-        elif (models_dir / "1_edges_first_layer.pt").exists():
-            model_path = models_dir / "1_edges_first_layer.pt"
+    # if models_dir.exists():
+    #     if (models_dir / "model_edges_first_layer.pt").exists():
+    #         print("1 EXISTSSSSSSSSSSS");
+    #         model_path = models_dir / "model_edges_first_layer.pt"
+    #     elif (models_dir / "1_edges_first_layer.pt").exists():
+    #         print("2 EXISTSSSSSSSSSSS");
+    #         model_path = models_dir / "1_edges_first_layer.pt"
     
+    print("3 EXISTSSSSSSSSSSS");
+
     if model_path is None and saved_models_dir.exists():
+
+        print("4 EXISTSSSSSSSSSSS");
         # Find the latest model in saved_models
         model_files = list(saved_models_dir.glob("model_*.pt"))
         if model_files:
+            print("5 EXISTSSSSSSSSSSS");
             # Sort by the number in filename to get the latest
             model_files.sort(key=lambda x: int(x.stem.split('_')[-1]))
             model_path = model_files[-1]
@@ -150,9 +157,9 @@ async def generate_cube_scramble(moves: int = 20):
         move_strings = []
         for face, rotation in scramble_moves_tuples:
             move_str = face.name
-            if rotation == Rotation.COUNTERCLOCKWISE:
+            if rotation == Rotation.CounterClockwise:
                 move_str += "'"
-            elif rotation == Rotation.DOUBLE:
+            elif rotation == Rotation.Double:
                 move_str += "2"
             move_strings.append(move_str)
         
@@ -214,11 +221,11 @@ async def solve_cube(request: SolveRequest):
             rotation = Rotation(rotation_idx)
             
             move_str = face.name
-            if rotation == Rotation.CLOCKWISE:
+            if rotation == Rotation.Clockwise:
                 pass  # No suffix for clockwise
-            elif rotation == Rotation.COUNTERCLOCKWISE:
+            elif rotation == Rotation.CounterClockwise:
                 move_str += "'"
-            elif rotation == Rotation.DOUBLE:
+            elif rotation == Rotation.Double:
                 move_str += "2"
             
             moves.append((face, rotation))
@@ -230,6 +237,8 @@ async def solve_cube(request: SolveRequest):
             # The 'done' flag from the environment indicates the goal is reached
             if done:
                 break
+
+            print(f'Step {step}: move={move_str}, reward={reward}, done={done}')
         
         final_is_solved = _is_solved(env.cube)
 

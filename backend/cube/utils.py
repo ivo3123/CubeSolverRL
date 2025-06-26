@@ -144,3 +144,43 @@ def transform_into_numpy_array(
     ])
 
     return np_cube
+
+def flat_state_to_cube_dict(flat_state: list[int]) -> dict:
+    """Преобразува 54-елементен масив към вътрешното представяне на куба (dict)."""
+    # Подредбата трябва да съответства на transform_into_numpy_array
+    # Връща dict[(Letter, PieceType)] = Color
+    from cube.enums import Face, Letter, PieceType, Color
+    
+    # Лицата и позициите по реда на transform_into_numpy_array
+    face_letters = [
+        # U
+        [Letter.A, Letter.B, Letter.C, Letter.D],
+        # L
+        [Letter.E, Letter.F, Letter.G, Letter.H],
+        # F
+        [Letter.I, Letter.J, Letter.K, Letter.L],
+        # R
+        [Letter.M, Letter.N, Letter.O, Letter.P],
+        # B
+        [Letter.Q, Letter.R, Letter.S, Letter.T],
+        # D
+        [Letter.U, Letter.V, Letter.W, Letter.X],
+    ]
+    face_names = [Face.U, Face.L, Face.F, Face.R, Face.B, Face.D]
+    
+    cube = {}
+    idx = 0
+    for face_idx, (face, letters) in enumerate(zip(face_names, face_letters)):
+        # Top row: corner, edge, corner
+        cube[(letters[0], PieceType.Corner)] = Color(flat_state[idx]); idx += 1
+        cube[(letters[0], PieceType.Edge)]   = Color(flat_state[idx]); idx += 1
+        cube[(letters[1], PieceType.Corner)] = Color(flat_state[idx]); idx += 1
+        # Middle row: edge, center, edge
+        cube[(letters[3], PieceType.Edge)]   = Color(flat_state[idx]); idx += 1
+        cube[(face, PieceType.Center)]       = Color(flat_state[idx]); idx += 1
+        cube[(letters[1], PieceType.Edge)]   = Color(flat_state[idx]); idx += 1
+        # Bottom row: corner, edge, corner
+        cube[(letters[3], PieceType.Corner)] = Color(flat_state[idx]); idx += 1
+        cube[(letters[2], PieceType.Edge)]   = Color(flat_state[idx]); idx += 1
+        cube[(letters[2], PieceType.Corner)] = Color(flat_state[idx]); idx += 1
+    return cube
