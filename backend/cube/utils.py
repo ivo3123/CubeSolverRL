@@ -22,6 +22,21 @@ d_action_turn = {
     17: (Face.D, Rotation.Double),
 }
 
+d_face_str = {
+    Face.F: "F",
+    Face.R: "R",
+    Face.B: "B",
+    Face.L: "L",
+    Face.U: "U",
+    Face.D: "D",
+}
+
+d_rotation_str = {
+    Rotation.Clockwise: "'",
+    Rotation.CounterClockwise: "",
+    Rotation.Double: "2",
+}
+
 def get_neighbor_edge(letter: Letter) -> Letter:
     edge_pairs = {
         Letter.A: Letter.Q, Letter.Q: Letter.A,
