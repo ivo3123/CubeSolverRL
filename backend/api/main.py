@@ -66,13 +66,14 @@ def load_agent():
     saved_models_dir = backend_dir / "saved_models" / "edges_first_layer"
     
     model_path = None
-    # if models_dir.exists():
-    #     if (models_dir / "model_edges_first_layer.pt").exists():
-    #         print("1 EXISTSSSSSSSSSSS");
-    #         model_path = models_dir / "model_edges_first_layer.pt"
-    #     elif (models_dir / "1_edges_first_layer.pt").exists():
-    #         print("2 EXISTSSSSSSSSSSS");
-    #         model_path = models_dir / "1_edges_first_layer.pt"
+    if models_dir.exists():
+        if (models_dir / "1_edges_first_layer.pt").exists():
+            print("2 EXISTSSSSSSSSSSS");
+            model_path = models_dir / "1_edges_first_layer.pt"
+        elif (models_dir / "model_edges_first_layer.pt").exists():
+            print("1 EXISTSSSSSSSSSSS");
+            model_path = models_dir / "model_edges_first_layer.pt"
+        
     
     print("3 EXISTSSSSSSSSSSS");
 
@@ -99,8 +100,8 @@ def load_agent():
         n_actions=n_actions,
         lr=0.001,  # Not used for inference
         gamma=0.99,  # Not used for inference
-        batch_size=32,  # Not used for inference
-        buffer_capacity=10000  # Not used for inference
+        batch_size=64,  # Not used for inference
+        buffer_capacity=40000  # Not used for inference
     )
     
     # Load the trained weights
@@ -241,6 +242,10 @@ async def solve_cube(request: SolveRequest):
             print(f'Step {step}: move={move_str}, reward={reward}, done={done}')
         
         final_is_solved = _is_solved(env.cube)
+
+        print('Flat state:', request.cube_state)
+        print('Cube dict:', env.cube)
+        print('Observation:', obs.tolist())
 
         if final_is_solved:
              return SolveResponse(

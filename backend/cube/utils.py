@@ -1,5 +1,6 @@
 import numpy as np
 from cube.enums import Face, Rotation, Letter, Color, PieceType
+from cube.cube import get_solved_cube, move
 
 d_action_turn = {
     0: (Face.U, Rotation.Clockwise),
@@ -184,3 +185,11 @@ def flat_state_to_cube_dict(flat_state: list[int]) -> dict:
         cube[(letters[2], PieceType.Edge)]   = Color(flat_state[idx]); idx += 1
         cube[(letters[2], PieceType.Corner)] = Color(flat_state[idx]); idx += 1
     return cube
+
+cube = get_solved_cube()
+cube = move(cube, [(Face.U, Rotation.Clockwise)])  # Примерно разбъркване
+obs = transform_into_numpy_array(cube, should_consider_edges_first_layer=True)
+print(obs.flatten().tolist())
+
+obs = transform_into_numpy_array(get_solved_cube(), should_consider_edges_first_layer=True)
+print(obs.flatten().tolist())
