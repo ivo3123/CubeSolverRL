@@ -1,5 +1,4 @@
 .python-version
-uv.lock
 .venv/
 **/__pycache__/
 **/saved_models/
