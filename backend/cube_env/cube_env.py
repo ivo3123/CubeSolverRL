@@ -103,7 +103,12 @@ class RubiksCubeEnv(gym.Env):
                 elif delta == 0:
                     reward += 0
             elif edges_first_layer_solved_count_after_turn == 3:
-                reward += -1
+                corners_diff = corners_first_layer_solved_count_after_turn - corners_first_layer_solved_count_before_turn
+
+                if corners_diff <= -2:
+                    reward += -30
+                else:
+                    reward += -1
             elif edges_first_layer_solved_count_after_turn < 3:
                 reward += -10
 
@@ -159,4 +164,6 @@ class RubiksCubeEnv(gym.Env):
         if self.initial_scramble is None:
             scramble = generate_scramble()
         
-        self.cube = move(get_solved_cube(), l_turns=scramble)
+            self.cube = move(get_solved_cube(), l_turns=scramble)
+        else:
+            self.cube = move(get_solved_cube(), l_turns=self.initial_scramble)
