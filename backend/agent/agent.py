@@ -6,12 +6,14 @@ from collections import deque
 from agent.network import QNetwork
 
 class DQNAgent:
-    def __init__(self, obs_dim, n_actions, lr, gamma, batch_size, buffer_capacity):
+    def __init__(self, obs_dim, n_actions, lr, gamma, batch_size, buffer_capacity, l_actions_not_to_choose_randomly=[]):
         self.obs_dim = obs_dim
         self.n_actions = n_actions
         self.lr = lr
         self.gamma = gamma
         self.batch_size = batch_size
+        self.buffer_capacity = buffer_capacity
+        self.l_actions_not_to_choose_randomly = l_actions_not_to_choose_randomly
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.policy_net = QNetwork(obs_dim, n_actions).to(self.device)
@@ -26,7 +28,11 @@ class DQNAgent:
 
     def select_action(self, state, epsilon):
         if random.random() < epsilon:
-            return random.randint(0, self.n_actions - 1)
+            while True:
+                action = random.randint(0, self.n_actions - 1)
+
+                if action not in self.l_actions_not_to_choose_randomly:
+                    return action
         else:
             state = torch.tensor(state, dtype=torch.float32).unsqueeze(0).to(self.device)
             with torch.no_grad():
